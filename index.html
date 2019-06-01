@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Fredis</title>
+	<style>
+		body {
+			margin: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<div id="div"></div>
+	<canvas id="myCanvas"></canvas>
+	<script src="Stats.js"></script>
+	<script src="three.js"></script>
+	<script src="GLTFLoader.js"></script>
+	<script src="OrbitControls.js"></script>
+	<script src="DragControls.js"></script>
+
+	<script>
+		var renderer,
+			scene,
+			camera,
+			stats,
+			smokeParticles = [],
+			myCanvas = document.getElementById('myCanvas'),
+			controls,
+			startColor;
+
+		var objects = [];
+
+		init();
+
+		function init() {
+			renderer = new THREE.WebGLRenderer({
+				canvas: myCanvas,
+				antialias: true
+			});
+			renderer.setClearColor(0x000000);
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 100000);
+			camera.position.z = 2000;
+			camera.position.y = 2000;
+			camera.position.x = -3000;
+			camera.rotation.x = -0.08;
+
+			scene = new THREE.Scene();
+			scene.add(camera);
+			
+
+			control = new THREE.OrbitControls(camera);
+			control.addEventListener('change', render);
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			stats.domElement.style.zIndex = 100;
+			div.appendChild(stats.domElement);
+
+
+			var element = document.createElement('span');
+			element.id = "spanObjectSize";
+			element.style.fontSize = "24px";
+			element.style.color = "#ffffff";
+			element.style.position = 'absolute';
+			element.style.top = '0px';
+			element.style.left = '100px';
+			div.appendChild(element);
+
+			world_geom = new THREE.PlaneGeometry(4000, 4000, 32, 32);
+			mat_world = new THREE.MeshBasicMaterial({ color: 0x606060, side: THREE.DoubleSide});
+			world = new THREE.Mesh(world_geom, mat_world);
+			world.position.y = 0;
+			world.rotation.x = 90 * (Math.PI/180);
+			scene.add(world);
+
+			ambientLight = new THREE.AmbientLight(0xaaaaaa);
+			scene.add(ambientLight);
+			pointLight1 = new THREE.PointLight(0xffffff);
+			pointLight1.position.set(400, 600, 300);
+			scene.add(pointLight1);
+			pointLight2 = new THREE.PointLight(0xffffff, 0.5);
+			pointLight2.position.set(-300, 400, -300);
+			scene.add(pointLight2);
+
+			var loader = new THREE.GLTFLoader();
+			loader.load('Table_Large_Rectangular_01.gltf', function (gltf) {
+				gltf.scene.children.forEach(function(child){
+					scene.add(gltf.scene);
+					objects.push(child);
+					child.position.x = 0;
+					child.position.y = 0;
+					child.position.z = 0;
+					child.scale.set(55, 55, 55);
+				})
+			});
+
+			loader.load('Chair.gltf', function (gltf) {
+				gltf.scene.children.forEach(function(child){
+					scene.add(child);
+					objects.push(child);
+					child.position.x = 0;
+					child.position.y = 0;
+					child.position.z = 600;
+					child.scale.set(50, 50, 50);
+					child.rotation.y = 180 * (Math.PI/180);
+				})
+			});
+
+			loader.load('Chair.gltf', function (gltf) {
+				gltf.scene.children.forEach(function(child){
+					scene.add(child);
+					objects.push(child);
+					child.position.x = 0;
+					child.position.y = 0;
+					child.position.z = -600;
+					child.scale.set(50, 50, 50);
+				})
+			});
+
+			loader.load('Mug_01.gltf', function (gltf) {
+				gltf.scene.children.forEach(function(child){
+					scene.add(child);
+					objects.push(child);
+					child.position.x = 0;
+					child.position.y = 510;
+					child.position.z = 450;
+					child.scale.set(0.5, 0.5, 0.5);
+					child.rotation.x = 90 * (Math.PI/180);
+					child.rotation.z = -90 * (Math.PI/180);
+				})
+			});
+
+			loader.load('Mug_01.gltf', function (gltf) {
+				gltf.scene.children.forEach(function(child){
+					scene.add(child);
+					objects.push(child);
+					child.position.x = 0;
+					child.position.y = 510;
+					child.position.z = -450;
+					child.scale.set(0.5, 0.5, 0.5);
+					child.rotation.x = 90 * (Math.PI/180);
+					child.rotation.z = 90 * (Math.PI/180);
+				})
+			});
+
+
+			loader.load('model.gltf', function (gltf) {
+				gltf.scene.children.forEach(function(child){
+					scene.add(child);
+					objects.push(child);
+					child.position.x = 40;
+					child.position.y = 1045;
+					child.position.z = 1000;
+					child.scale.set(500, 500, 500);
+				})
+			});
+
+
+
+			//drag and drop control
+			controls = new THREE.DragControls(objects, camera, renderer.domElement);
+			controls.addEventListener('dragstart', dragStartCallback);
+			controls.addEventListener('dragend', dragEndCallback);
+		}
+
+		function dragStartCallback(event) {
+			document.getElementById("spanObjectSize").textContent = "Selected object scale   x: " + event.object.scale.x + " y: " + event.object.scale.y + " z: " + event.object.scale.z;
+			control.enabled = false;
+		}
+
+		function dragEndCallback(event){
+			document.getElementById("spanObjectSize").textContent = "";
+			control.enabled = true;
+		}
+
+		render();
+		function render() {	
+			requestAnimationFrame(render);
+			renderer.render(scene, camera);
+			stats.update(render);
+		}
+
+	</script>
+</body>
+
+</html>
